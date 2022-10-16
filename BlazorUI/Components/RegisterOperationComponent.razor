@@ -1,0 +1,122 @@
+﻿@using ManagingSelfFinanceWebAPI.Models
+@using Data.Services.Interfaces
+@inject IService<RegisterOperation> OperationsService
+
+
+@if (CreateDialogOpen)
+{
+    <DialogComponent Title="Create" OnClose="@OnCreateDialogClose">
+        <RegisterOperationFormComponent Operation="@currentOperation" />
+    </DialogComponent>
+}
+
+@if (UpdateDialogOpen)
+{
+    <DialogComponent Title="Update" OnClose="@OnUpdateDialogClose">
+        <RegisterOperationFormComponent Operation="@currentOperation" />
+    </DialogComponent>
+}
+
+@if (DeleteDialogOpen)
+{
+    <DialogComponent Title="Delete" OnClose="@OnDeleteDialogClose">
+        Do you want to delete this entry?
+    </DialogComponent>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Operation Id</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>
+                <button type="button" class="btn" @onclick="() => OpenCreateDialog()">Create</button>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var operation in Operations)
+        {
+            <tr>
+                <td>@operation.OperationId</td>
+                <td>@operation.Amount</td>
+                <td>@operation.Date.ToShortDateString()</td>
+                <td>
+                    <button type="button" class="btn" @onclick="() => OpenUpdateDialog(operation)">Edit</button>
+                    <button type="button" class="btn" @onclick="() => OpenDeleteDialog(operation)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public IEnumerable<RegisterOperation> Operations { get; set; } = new List<RegisterOperation>();
+    [Parameter]
+    public EventCallback OnUpdateCallback { get; set; }
+    private RegisterOperation currentOperation;
+
+    public bool DeleteDialogOpen { get; set; }
+
+    private void OpenDeleteDialog(RegisterOperation operation)
+    {
+        DeleteDialogOpen = true;
+        currentOperation = operation;
+        StateHasChanged();
+    }
+
+    private async Task OnDeleteDialogClose(bool accepted)
+    {
+        DeleteDialogOpen = false;
+
+        if (accepted)
+        {
+            await OperationsService.DeleteAsync(currentOperation.Id);
+        }
+        StateHasChanged();
+        await OnUpdateCallback.InvokeAsync();
+    }
+
+    public bool CreateDialogOpen { get; set; }
+
+    private void OpenCreateDialog()
+    {
+        CreateDialogOpen = true;
+        currentOperation = new RegisterOperation();
+        StateHasChanged();
+    }
+
+    private async Task OnCreateDialogClose(bool accepted)
+    {
+        CreateDialogOpen = false;
+        if (accepted)
+        {
+            await OperationsService.CreateAsync(currentOperation);
+        }
+        StateHasChanged();
+        await OnUpdateCallback.InvokeAsync();
+    }
+
+
+    public bool UpdateDialogOpen { get; set; }
+
+    private void OpenUpdateDialog(RegisterOperation operation)
+    {
+        currentOperation = operation;
+        UpdateDialogOpen = true;
+        StateHasChanged();
+    }
+
+    private async Task OnUpdateDialogClose(bool accepted)
+    {
+        UpdateDialogOpen = false;
+        if (accepted)
+        {
+            await OperationsService.UpdateAsync(currentOperation);
+        }
+        StateHasChanged();
+        await OnUpdateCallback.InvokeAsync();
+    }
+}

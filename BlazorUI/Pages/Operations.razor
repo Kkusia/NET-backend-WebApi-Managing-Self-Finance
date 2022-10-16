@@ -1,0 +1,22 @@
+﻿@page "/operations"
+@using BlazorUI.Components
+@using Data.Services.Interfaces
+@using ManagingSelfFinanceWebAPI.Models
+@inject IService<Operation> OperationsService
+
+
+<h1>Operations</h1>
+
+<OperationComponent Operations="operations" OnUpdateCallback="LoadDataAsync"/>
+
+@code {
+    private IEnumerable<Operation> operations = new List<Operation>();
+
+    protected override async Task OnInitializedAsync() {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync() {
+        operations = await OperationsService.GetAllAsync();
+    }
+}
