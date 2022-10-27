@@ -1,0 +1,120 @@
+﻿@using ManagingSelfFinanceWebAPI.Models
+@using Data.Services.Interfaces
+@inject IService<TypeOperation> OperationsService
+
+
+@if (CreateDialogOpen)
+{
+    <DialogComponent Title="Create" OnClose="@OnCreateDialogClose">
+        <TypeOperationFormComponent Operation="@currentOperation" />
+    </DialogComponent>
+}
+
+@if (UpdateDialogOpen)
+{
+    <DialogComponent Title="Update" OnClose="@OnUpdateDialogClose">
+        <TypeOperationFormComponent Operation="@currentOperation" />
+    </DialogComponent>
+}
+
+@if (DeleteDialogOpen)
+{
+    <DialogComponent Title="Delete" OnClose="@OnDeleteDialogClose">
+        Do you want to delete this entry?
+    </DialogComponent>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Type Id</th>
+            <th>Type Name</th>
+            <th>
+                <button type="button" class="btn" @onclick="() => OpenCreateDialog()">Create</button>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var operation in Operations)
+        {
+            <tr>
+                <td>@operation.Id</td>
+                <td>@operation.Type</td>
+                <td>
+                    <button type="button" class="btn" @onclick="() => OpenUpdateDialog(operation)">Edit</button>
+                    <button type="button" class="btn" @onclick="() => OpenDeleteDialog(operation)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public IEnumerable<TypeOperation> Operations { get; set; } = new List<TypeOperation>();
+    [Parameter]
+    public EventCallback OnUpdateCallback { get; set; }
+    private TypeOperation currentOperation;
+
+    public bool DeleteDialogOpen { get; set; }
+
+    private void OpenDeleteDialog(TypeOperation operation)
+    {
+        DeleteDialogOpen = true;
+        currentOperation = operation;
+        StateHasChanged();
+    }
+
+    private async Task OnDeleteDialogClose(bool accepted)
+    {
+        DeleteDialogOpen = false;
+
+        if (accepted)
+        {
+            await OperationsService.DeleteAsync(currentOperation.Id);
+        }
+        StateHasChanged();
+        await OnUpdateCallback.InvokeAsync();
+    }
+
+    public bool CreateDialogOpen { get; set; }
+
+    private void OpenCreateDialog()
+    {
+        CreateDialogOpen = true;
+        currentOperation = new TypeOperation();
+        StateHasChanged();
+    }
+
+    private async Task OnCreateDialogClose(bool accepted)
+    {
+        CreateDialogOpen = false;
+        if (accepted)
+        {
+            await OperationsService.CreateAsync(currentOperation);
+        }
+        StateHasChanged();
+        await OnUpdateCallback.InvokeAsync();
+    }
+
+
+    public bool UpdateDialogOpen { get; set; }
+
+    private void OpenUpdateDialog(TypeOperation operation)
+    {
+        currentOperation = operation;
+        UpdateDialogOpen = true;
+        StateHasChanged();
+    }
+
+    private async Task OnUpdateDialogClose(bool accepted)
+    {
+        UpdateDialogOpen = false;
+        if (accepted)
+        {
+            await OperationsService.UpdateAsync(currentOperation);
+        }
+        StateHasChanged();
+        await OnUpdateCallback.InvokeAsync();
+    }
+}
